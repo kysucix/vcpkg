@@ -96,6 +96,8 @@ if(VCPKG_TARGET_IS_MINGW)
     elseif(VCPKG_TARGET_ARCHITECTURE STREQUAL "x64")
         string(APPEND OPTIONS " --target-os=mingw64")
     endif()
+elseif(VCPKG_TARGET_IS_LINUX)
+    string(APPEND OPTIONS " --target-os=linux")
 elseif(VCPKG_TARGET_IS_WINDOWS)
     string(APPEND OPTIONS " --target-os=win32")
 elseif(VCPKG_TARGET_IS_OSX)
@@ -112,9 +114,9 @@ if(VCPKG_DETECTED_MSVC)
     set(OPTIONS "--toolchain=msvc ${OPTIONS}")
     # This is required because ffmpeg depends upon optimizations to link correctly
     string(APPEND VCPKG_COMBINED_C_FLAGS_DEBUG " -O2")
-    string(REPLACE " -RTC1 " "" VCPKG_COMBINED_C_FLAGS_DEBUG "${VCPKG_COMBINED_C_FLAGS_DEBUG}")
-    string(REPLACE " -Od " "" VCPKG_COMBINED_C_FLAGS_DEBUG "${VCPKG_COMBINED_C_FLAGS_DEBUG}")
-    string(REPLACE " -Ob0 " "" VCPKG_COMBINED_C_FLAGS_DEBUG "${VCPKG_COMBINED_C_FLAGS_DEBUG}")
+    string(REGEX REPLACE "(^| )-RTC1( |$)" " " VCPKG_COMBINED_C_FLAGS_DEBUG "${VCPKG_COMBINED_C_FLAGS_DEBUG}")
+    string(REGEX REPLACE "(^| )-Od( |$)" " " VCPKG_COMBINED_C_FLAGS_DEBUG "${VCPKG_COMBINED_C_FLAGS_DEBUG}")
+    string(REGEX REPLACE "(^| )-Ob0( |$)" " " VCPKG_COMBINED_C_FLAGS_DEBUG "${VCPKG_COMBINED_C_FLAGS_DEBUG}")
 endif()
 
 string(APPEND VCPKG_COMBINED_C_FLAGS_DEBUG " -I \"${CURRENT_INSTALLED_DIR}/include\"")
@@ -457,6 +459,11 @@ if (VCPKG_TARGET_IS_OSX)
 endif()
 
 set(OPTIONS_CROSS " --enable-cross-compile")
+
+# ffmpeg needs --cross-prefix option to use appropriate tools for cross-compiling.
+if(VCPKG_DETECTED_CMAKE_C_COMPILER MATCHES "(/.+)gcc$")
+    string(APPEND OPTIONS_CROSS " --cross-prefix=${CMAKE_MATCH_1}")
+endif()
 
 if(VCPKG_TARGET_ARCHITECTURE STREQUAL "x64")
     string(APPEND OPTIONS_CROSS " --arch=x86_64")
